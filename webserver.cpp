@@ -15,3 +15,13 @@ WebServer::WebServer(){
     //定时器
     users_timer = new client_data[MAX_FD];
 }
+
+WebServer::~WebServer(){
+    close(m_epollfd);
+    close(m_listenfd);
+    close(m_pipefd[1]);
+    close(m_pipefd[0]);
+    delete[] users;
+    delete[] users_timer;
+    delete m_pool;
+}
