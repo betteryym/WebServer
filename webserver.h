@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <cassert>
@@ -30,14 +31,14 @@ public:
     void thread_pool();
     void sql_pool();
     void log_write();
-
+    void trig_mode();
     void eventListen();
     void eventLoop();
     void timer(int connfd, struct scokaddr_in client_address);
     void adjust_timer(util_timer* timer);
     void deal_timer(util_timer* timer, int sockfd);
     bool dealclinetdata();
-    bool dealwithsignal(bool timeout, bool& top_server);
+    bool dealwithsignal(bool& timeout, bool& top_server);
     void dealwithread(int sockfd);
     void dealwithwrite(int sockfd);
 
@@ -59,7 +60,6 @@ public:
     string m_passWord;
     string m_databaseName;
     int m_sql_num;
-    int m_SQLVerify;
 
     //线程池相关
     threadpool<http_conn>* m_pool;
@@ -71,9 +71,10 @@ public:
     int m_listenfd;
     int m_OPT_LINGER;
     int m_TRIGMode;
-
+    int m_LISTENTrigmode;
+    int m_CONNTrigmode;
+    
     //定时器相关
-    sort_timer_lst time_lst;
     client_data* users_timer;
     Utils utils;
 };
