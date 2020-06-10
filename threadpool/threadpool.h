@@ -63,5 +63,51 @@ bool threadpool<T>::append(T* request, int state){
         return false;
     }
     request->m_state = state;
-    
+    m_workqueue.push_back(request);
+    m_queuelocker.unlock();
+    m_queuestat.post();
+    return true;
+}
+template<typename T>
+bool threadpool<T>::append_p(T* request){
+    m_queuelocker.lock();
+    if(m_workqueue.size() >= m_max_requests){
+        m_queuelocker.unlock();
+        return false;
+    }
+    m_workqueue.push_back(request);
+    m_queuelocker.unlock();
+    m_queuestat.post();
+    return true;
+}
+template<typename T>
+void* threadpool<T>::worker(void* arg){
+    threadpool* pool = (threadpool*) arg;
+    pool->run();
+    return pool;
+}
+template<typename T>
+void threadpool<T>::run(){
+    while(true){
+        m_queuestat.wait();
+        m_queuelocker.lock();
+        if(m_workqueue.empty()){
+            m_queuelocker.unlock();
+            continue;
+        }
+        T* request = m_workqueue.front();
+        m_workqueue.pop_front();
+        m_queuelocker.unlock();
+        if(!request)
+            continue;
+        if(m_actor_model == 1){
+            if(request->m_state == 0){
+                if(request->read_once()){
+                    request->improv = 1;
+                    connectionRAII mysqlcon(&request->mysql, m_connPool);
+                    request->process();
+                }
+            }
+        }
+    }
 }
