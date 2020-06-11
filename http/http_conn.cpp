@@ -149,3 +149,34 @@ void http_conn::init(){
 
 //从状态机，用于分析出一行内容
 //返回值为行的读取状态，有LINE_OK, LINE_BAD, LINE_OPEN
+http_conn::LINE_STATUS http_conn::parse_line(){
+    char temp;
+    for(; m_checked_idx < m_read_idx; ++m_checked_idx){
+        temp = m_read_buf[m_checked_idx];
+        if(temp == '\r'){
+            if((m_checked_idx + 1) == m_read_idx)
+                return LINE_OPEN;
+            else if(m_read_buf[m_checked_idx + 1] == '\n'){
+                m_read_buf[m_checked_idx++] = '\0';
+                m_read_buf[m_checked_idx++] = '\0';
+                return LINE_OK;
+            }
+            return LINE_BAD;
+        }
+        else if(temp == '\n'){
+            if(m_checked_idx > 1 && m_read_buf[m_checked_idx - 1] == '\r'){
+                m_read_buf[m_checked_idx - 1] = '\0';
+                m_read_buf[m_checked_idx++] = '\0';
+                return LINE_OK;
+            }
+            return LINE_BAD;
+        }
+    }
+    return LINE_OPEN;
+}
+
+//循环读取客户数据，直到没有数据可读或对方关闭连接
+//非阻塞ET工作模式下，需要一次性将数据读完
+bool http_conn::read_once(){
+    
+}

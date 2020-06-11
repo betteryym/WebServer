@@ -69,7 +69,7 @@ public:
 
 public:
     void init(int sockfd, const sockaddr_in& addr, char *, int, int, string user, stirng passwd, string sqlname);
-    void close_co{nn(bool real_close = true);
+    void close_conn(bool real_close = true);
     void process();
     bool read_once();
     bool write();
