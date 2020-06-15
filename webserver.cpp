@@ -182,3 +182,106 @@ void WebServer::deal_timer(util_timer* timer, int sockfd){
     LOG_INFO("close fd %d", users_timer[sockfd].sockfd);
 }
 
+bool WebServer::dealclientdata(){
+    struct sockaddr_in client_address;
+    socklen_t client_addrlength = sizeof(client_address);
+    if(m_LISTENTrigmode == 0){
+        int connfd = accept(m_listenfd, (struct sockaddr*)&client_address, &client_addrlength);
+        if(connfd < 0){
+            LOG_ERROR("%s:errno is:%d", "accept error", errno);
+            return false;
+        }
+        if(http_conn::m_user_count >= MAX_FD){
+            utils.show_error(connfd, "Internal server busy");
+            LOG_ERROR("%s", "Internal server busy");
+            return false;
+        }
+        timer(connfd, client_address);
+    }
+    else{
+        while(1){
+            int connfd = accept(m_listenfd, (struct sockaddr*)&client_address, &client_addrlength);
+            if(connfd < 0){
+                LOG_ERROR("%s:errno is: %d", "accept error", errno);
+                break;
+            }
+            if(http_conn::m_user_count >= MAX_FD){
+                utils.show_error(connfd, "Internal server busy");
+                LOG_ERROR("%s", "Internal server busy"):
+                break;
+            }
+            timer(connfd, client_address);
+        }
+        return false;
+    }
+    return true;
+}
+
+bool WebServer::dealwithsignal(bool& timeout, bool& stop_server){
+    int ret = 0;
+    int sig; 
+    char signals[1024];
+    ret = recv(m_pipefd[0], signals, sizeof(signals), 0);
+    if(ret == -1){
+        return false;
+    }
+    else if(ret == 0){
+        return false;
+    }
+    else{
+        for(int i = 0; i < ret; ++i){
+            switch(signals[i]){
+                case SIGALRM:{
+                    timeout = true;
+                    break;
+                }
+                case SIGTERM:{
+                    stop_server = true;
+                    break;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void WebServer::dealwithread(int sockfd){
+    util_timer* timer = users_timer[sockfd].timer;
+
+    //reactor
+    if(m_actormodel == 1){
+        if(timer){
+            adjust_timer(timer);
+        }
+
+        //若检测到读事件，将该事件放入请求队列
+        m_pool->append(users+sockfd, 0);
+
+        while(true){
+            if(users[sockfd].improv == 1){
+                if(users[sockfd].timer_flag == 1){
+                    deal_timer(timer, sockfd);
+                    users[sockfd].timer_flag = 0;
+                }
+                users[sockfd].improv = 0;
+                break;
+            }
+        }
+    }
+    else{
+        //proactor
+        if(users[sockfd].read_once()){
+            LOG_INFO("deal with the client(%s)", inet_ntoa(users[sockfd].get_address()->sin_addr));
+
+            //若监测到读事件，将该事件放入请求队列
+            m_pool->append_p(users + sockfd);
+
+            if(timer){
+                adjust_timer(timer);
+            }
+        }
+        else{
+            deal_timer(timer, sockfd);
+        }
+    }
+}
