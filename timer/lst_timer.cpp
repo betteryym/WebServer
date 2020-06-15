@@ -46,7 +46,7 @@ void sort_timer_lst::adjust_timer(util_timer* timer){
     if(timer == head){
         head = head->next;
         head->prev = NULL;
-        timer->next = NULL:
+        timer->next = NULL;
         add_timer(timer, head);
     }
     /*如果目标定时器不是链表的头结点，将该定时器从链表中取出，
@@ -90,7 +90,7 @@ void sort_timer_lst::tick(){
         return;
     }
 
-    time_t cur = time(NULL):
+    time_t cur = time(NULL);
     util_timer* tmp = head;
     while(tmp){
         if(cur < tmp->expire){
@@ -99,7 +99,7 @@ void sort_timer_lst::tick(){
         tmp->cb_func(tmp->user_data);
         head = tmp->next;
         if(head){
-            head->prev = NULL:
+            head->prev = NULL;
         }
         delete tmp;
         tmp = head;
@@ -181,6 +181,8 @@ int* Utils::u_pipefd = 0;
 int Utils::u_epollfd = 0;
 
 class Utils;
+
+/*定时器回调函数，它删除非活动连接的socket上的注册事件，并关闭*/
 void cb_func(client_data* user_data){
     epoll_ctl(Utils::u_epollfd, EPOLL_CTL_DEL, user_data->sockfd, 0);
     assert(user_data);

@@ -146,3 +146,39 @@ void WebServer::eventListen(){
 
     alarm(TIMESLOT);
 }
+
+void WebServer::timer(int connfd, struct sockaddr_in client_address){
+    users[connfd].init(connfd, client_address, m_root, m_CONNTrigmode, m_close_log, m_user, m_password, m_databaseName);
+
+    //初始化client_data数据
+    //创建定时器，设置回调函数和超时时间，绑定用户数据，将定时器添加到链表中
+    users_timer[connfd].address = client_address;
+    users_timer[connfd].sockfd = connfd;
+    util_timer* timer = new util_timer;
+    timer->user_data = &users_timer[connfd];
+    timer->cb_func = cb_func;
+    time_t cur = time(NULL);
+    timer->expire = cur + 3 * TIMESLOT;
+    users_timer[connfd].timer = timer;
+    utils.m_timer_lst.add_timer(timer);
+}
+
+//若有数据传输，则将定时器往后延迟3个单位
+//并对新的定时器在链表上的位置进行调整
+void WebServer::adjust_timer(util_timer* timer){
+    time_t cur = time(NULL);
+    timer->expire = cur + 3 * TIMESLOT;
+    utils.m_timer_lst.adjust_timer(timer);
+
+    LOG_INFO("%s", "adjust timer once");
+}
+
+void WebServer::deal_timer(util_timer* timer, int sockfd){
+    timer->cb_func(&users_timer[sockfd]);
+    if(timer){
+        utils.m_timer_lst.del_timer(timer);
+    }
+
+    LOG_INFO("close fd %d", users_timer[sockfd].sockfd);
+}
+

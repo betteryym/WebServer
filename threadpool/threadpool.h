@@ -57,8 +57,7 @@ threadpool<T>::~threadpool(){
     delete[] m_threads;
 }
 template<typename T>
-bool threadpool<T>::append(T* request, int state){
-    m_queuelocker.lock();
+bool threadpool<T>::append(T* request, int state){u_epollfd
     if(m_workqueue.size() >= m_max_requests){
         m_queuelocker.unlock();
         return false;
