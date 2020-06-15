@@ -8,13 +8,14 @@
 class sem{
 public:
     //无名信号，初始化时第二个变量==0，进程内线程共享
+    //第三个变量：信号初始值
     sem(){
         if(sem_init(&m_sem, 0, 0) != 0){
             throw std::exception();
         }
     }
     sem(int num){
-        if(sem_init(&m_sem, 0, num) ！= 0){
+        if(sem_init(&m_sem, 0, num) != 0){
             throw std::exception();
         }
     }
@@ -77,7 +78,7 @@ public:
     }
     bool timewait(pthread_mutex_t* m_mutex, struct timespec t){
         int ret = 0;
-        ret = pthread_cond_timewait(&m_cond, m_mutex, &t);
+        ret = pthread_cond_timedwait(&m_cond, m_mutex, &t);
         return ret == 0;
     }
     bool signal(){

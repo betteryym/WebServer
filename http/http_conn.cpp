@@ -39,7 +39,7 @@ void http_conn::initmysql_result(connection_pool* connPool){
     //从结果集中获取下一行，将对应的用户名和密码，存入Map中
     while(MYSQL_ROW row = mysql_fetch_row(result)){
         string temp1(row[0]);
-        string t3mp2(row[1]);
+        string temp2(row[1]);
         users[temp1] = temp2;
     }
 }
@@ -197,7 +197,7 @@ bool http_conn::read_once(){
     else{
         while(true){
             bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0);
-            if(byres_read == -1){
+            if(bytes_read == -1){
                 if(errno == EAGAIN || errno == EWOULDBLOCK)
                     break;
                 return false;
@@ -224,7 +224,7 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char* text){
     }
     else if(strcasecmp(method, "POST") == 0){
         m_method = POST;
-        cig = 1;
+        cgi = 1;
     }
     else{
         return BAD_REQUEST;

@@ -25,7 +25,7 @@ public:
     ~WebServer();
 
     void init(int port, string user, string passWord, string databasename,
-                    int log_write, int sqlverify, int opt_linger, int trigmode, int sql_num,
+                    int log_write, int opt_linger, int trigmode, int sql_num,
                     int thread_num, int close_log, int actor_model);
     
     void thread_pool();
@@ -57,7 +57,7 @@ public:
     //数据库相关
     connection_pool* m_connPool;
     string m_user;
-    string m_passWord;
+    string m_password;
     string m_databaseName;
     int m_sql_num;
 

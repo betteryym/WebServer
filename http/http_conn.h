@@ -68,7 +68,7 @@ public:
     ~http_conn() {}
 
 public:
-    void init(int sockfd, const sockaddr_in& addr, char *, int, int, string user, stirng passwd, string sqlname);
+    void init(int sockfd, const sockaddr_in& addr, char *, int, int, string user, string passwd, string sqlname);
     void close_conn(bool real_close = true);
     void process();
     bool read_once();
@@ -111,7 +111,7 @@ private:
     sockaddr_in m_address;
     char m_read_buf[READ_BUFFER_SIZE];
     int m_read_idx;
-    int m_checkd_idx;
+    int m_checked_idx;
     int m_start_line;
     char m_write_buf[WRITE_BUFFER_SIZE];
     int m_write_idx;
