@@ -207,7 +207,7 @@ bool WebServer::dealclientdata(){
             }
             if(http_conn::m_user_count >= MAX_FD){
                 utils.show_error(connfd, "Internal server busy");
-                LOG_ERROR("%s", "Internal server busy"):
+                LOG_ERROR("%s", "Internal server busy");
                 break;
             }
             timer(connfd, client_address);
@@ -282,6 +282,92 @@ void WebServer::dealwithread(int sockfd){
         }
         else{
             deal_timer(timer, sockfd);
+        }
+    }
+}
+
+void WebServer::dealwithwrite(int sockfd){
+    util_timer* timer = users_timer[sockfd].timer;
+    //reactor
+    if(m_actormodel == 1){
+        if(timer){
+            adjust_timer(timer);
+        }
+
+        m_pool->append(users + sockfd, 1);
+        
+        while(true){
+            if(users[sockfd].improv == 1){
+                if(users[sockfd].timer_flag == 1){
+                    deal_timer(timer, sockfd);
+                    users[sockfd].timer_flag = 0;
+                }
+                users[sockfd].improv = 0;
+                break;
+            }
+        }
+    }
+    else{
+        //proactor
+        if(users[sockfd].write()){
+            LOG_INFO("send data to the client(%s)", inet_ntoa(users[sockfd].get_address()->sin_addr));
+
+            if(timer){
+                adjust_timer(timer);
+            }
+        }
+        else{
+            deal_timer(timer, sockfd);
+        }
+    }
+}
+
+void WebServer::eventLoop(){
+    bool timeout = false;
+    bool stop_server = false;
+
+    while(!stop_server){
+        int number = epoll_wait(m_epollfd, events, MAX_EVENT_NUMBER, -1);
+        if(number < 0 && errno != EINTR){
+            LOG_ERROR("%s", "epoll failure");
+            break;
+        }
+
+        for(int i = 0; i < number; i++){
+            int sockfd = events[i].data.fd;
+
+            //处理新到的客户连接
+            if(sockfd == m_listenfd){
+                bool flag = dealclientdata();
+                if(flag  == false){
+                    continue;
+                }
+            }
+            //服务器端关闭连接 ，移除对应的定时器
+            else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+                util_timer* timer = users_timer[sockfd].timer;
+                deal_timer(timer, sockfd);
+            }
+            //处理信号
+            else if((sockfd == m_pipefd[0]) && (events[i].events & EPOLLIN)){
+                bool flag = dealwithsignal(timeout, stop_server);
+                if(flag == false)
+                    LOG_ERROR("%s", "dealclientdata failure");
+            }
+            //处理客户连接上接收到的数据
+            else if(events[i].events & EPOLLIN){
+                dealwithread(sockfd);
+            }
+            else if(events[i].events & EPOLLOUT){
+                dealwithwrite(sockfd);
+            }
+        }
+        if(timeout){
+            utils.timer_handler();
+
+            LOG_INFO("%s", "timer tick");
+
+            timeout = false;
         }
     }
 }
