@@ -50,6 +50,9 @@ public:
     ~sort_timer_lst();
 
     void add_timer(util_timer* timer);
+    /*当某个定时任务发生变化时，调整对应的定时器在链表中的位置。
+    这个函数只考虑被调整的定时器的超时时间延长的情况，
+    即该定时器需要往链表的尾部移动*/
     void adjust_timer(util_timer* timer);
     void del_timer(util_timer* timer);
     void tick();
