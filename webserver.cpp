@@ -132,5 +132,17 @@ void WebServer::eventListen(){
     m_epollfd = epoll_create(5);
     assert(m_epollfd != -1);
 
-    
+    utils.addfd(m_epollfd, m_listenfd, false, m_LISTENTrigmode);
+    http_conn::m_epollfd = m_epollfd;
+
+    ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
+    assert(ret != -1);
+    utils.setnonblocking(m_pipefd[1]);
+    utils.addfd(m_epollfd, m_pipefd[0], false, 0);
+
+    utils.addsig(SIGPIPE, SIG_IGN);
+    utils.addsig(SIGALRM, utils.sig_handler, false);
+    utils.addsig(SIGTERM, utils.sig_handler, false);
+
+    alarm(TIMESLOT);
 }
