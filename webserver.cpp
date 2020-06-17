@@ -268,8 +268,8 @@ void WebServer::dealwithread(int sockfd){
             }
         }
     }
+    //proactor
     else{
-        //proactor
         if(users[sockfd].read_once()){
             LOG_INFO("deal with the client(%s)", inet_ntoa(users[sockfd].get_address()->sin_addr));
 
