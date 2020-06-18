@@ -316,6 +316,174 @@ http_conn::HTTP_CODE http_conn::process_read(){
     char* text = 0;
 
     while((m_check_state == CHECK_STATE_CONTENT && line_status == LINE_OK) || ((line_status = parse_line()) == LINE_OK)){
-        
+        text = get_line();
+        m_start_line = m_checked_idx;
+        LOG_INFO("%s", text);
+        switch(m_check_state){
+            case CHECK_STATE_REQUESTLINE:
+            {
+                ret = parse_request_line(text);
+                if(ret == BAD_REQUEST){
+                    return BAD_REQUEST;
+                }
+                break;
+            }
+            case CHECK_STATE_HEADER:
+            {
+                ret = parse_headers(text);
+                if(ret == BAD_REQUEST)
+                    return BAD_REQUEST;
+                else if(ret  == GET_REQUEST){
+                    return do_request();
+                }
+                break;
+            }
+            case CHECK_STATE_CONTENT:
+            {
+                ret = parse_content(text);
+                if(ret == GET_REQUEST)
+                    return do_request();
+                line_status = LINE_OPEN;
+                break;
+            }
+            default:
+                return INTERNAL_ERROR;
+        }
+    }
+    return NO_REQUEST;
+}
+
+http_conn::HTTP_CODE http_conn::do_request(){
+    strcpy(m_real_file, doc_root);
+    int len = strlen(doc_root);
+    const char* p = strrchr(m_url, '/');
+
+    //处理cgi
+    if(cgi == 1 && (*(p + 1) == '2' || *(p+1) == 3)){
+        //根据标志判断是登陆检测还是注册检测
+        char flag = m_url[1];
+
+        char* m_url_real = (char*)malloc(sizeof(char)* 200);
+        strcpy(m_url_real, "/");
+        strcat(m_url_real, m_url + 2);
+        strncpy(m_real_file + len, m_url_real, FILENAME_LEN - len - 1);
+        free(m_url_real);
+
+        //将用户名和密码提取出来
+        //user=123&passwd=123
+        char name[100], password[100];
+        int i;
+        for(i = 5; m_string[i] != '&'; ++i)
+            name[i-5] = m_string[i];
+        name[i-5] = '\0';
+
+        int j = 0;
+        for(i = i + 10; m_string[i] != '\0'; ++i, ++j){
+            password[j] = m_string[i];
+        }
+        password[j] = '\0';
+
+        if(*(p+1) == '3'){
+            //如果是注册，先检测数据库中是否有重名的
+            //没有重名的，进行增加数据
+            char* sql_insert = (char*)malloc(sizeof(char)* 200);
+            strcpy(sql_insert, "INSERT INTO user(username, passwd) VALUES(");
+            strcat(sql_insert, "'");
+            strcat(sql_insert, name);
+            strcat(sql_insert, "', '");
+            strcat(sql_insert, password);
+            strcat(sql_insert, "')");
+
+            if(users.find(name) == users.end()){
+                m_lock.lock();
+                int res = mysql_query(mysql, sql_insert);
+                users.insert(pair<string, string>(name, password));
+                m_lock.unlock();
+
+                if(!res){
+                    strcpy(m_url, "/log.html");
+                }
+                else{
+                    strcpy(m_url, "/registerError.html");
+                }
+            }
+            //如果是登陆，直接判断
+            //若浏览器输入的用户名和密码在表中可以查找到，返回1，否则返回0
+            else if(*(p+1) == '2'){
+                if(users.find(name) != users.end() && users[name] == password){
+                    strcpy(m_url, "/welcome.html");
+                }
+                else{
+                    strcpy(m_url, "/logError.html");
+                }
+            }
+        }
+    }
+
+    if (*(p + 1) == '0')
+    {
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/register.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+        free(m_url_real);
+    }
+    else if (*(p + 1) == '1')
+    {
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/log.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+        free(m_url_real);
+    }
+    else if (*(p + 1) == '5')
+    {
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/picture.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+        free(m_url_real);
+    }
+    else if (*(p + 1) == '6')
+    {
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/video.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+        free(m_url_real);
+    }
+    else if (*(p + 1) == '7')
+    {
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/fans.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+        free(m_url_real);
+    }
+    else
+        strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
+
+    //取得指定文件的文件属性，文件属性存储在结构体stat里
+    if(stat(m_real_file, &m_file_stat) < 0)
+        return NO_RESOURCE;
+    
+    if(!(m_file_stat.st_mode & S_IROTH))
+        return FORBIDDEN_REQUEST;
+    
+    if(S_ISDIR(m_file_stat.st_mode)){
+        return BAD_REQUEST;
+    }
+
+    int fd = open(m_real_file, O_RDONLY);
+    m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
+    return FILE_REQUSET;
+}
+
+void http_conn::unmap(){
+    if(m_file_address){
+        munmap(m_file_address, m_file_stat.st_size);
+        m_file_address = 0;
     }
 }
+
