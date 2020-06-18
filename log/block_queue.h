@@ -64,7 +64,7 @@ public:
         return false;
     }
     //返回队首元素
-    bool front(T& value{
+    bool front(T& value){
         m_mutex.lock();
         if(m_size == 0){
             m_mutex.unlock();
@@ -89,7 +89,7 @@ public:
     int size(){
         int tmp = 0;
         m_mutex.lock();
-        tmp = m_size();
+        tmp = m_size;
         m_mutex.unlock();
         return tmp;
     }
@@ -127,6 +127,7 @@ public:
     bool pop(T& item){
         m_mutex.lock();
         while(m_size <= 0){
+            //wait成功，返回0
             if(!m_cond.wait(m_mutex.get())){
                 m_mutex.unlock();
                 return false;

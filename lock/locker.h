@@ -73,6 +73,10 @@ public:
     }
     bool wait(pthread_mutex_t* m_mutex){
         int ret = 0;
+        //wait函数，mutex用于保护条件变量的互斥量，保证该操作的原子性
+        //把调用线程放入条件变量的等待队列中，然后将互斥锁解锁
+        //也就是从该函数开始执行到其调用线程被放入条件变量的等待队列的这段时间里
+        //条件变量不会被修改
         ret = pthread_cond_wait(&m_cond, m_mutex);
         return ret == 0;
     }

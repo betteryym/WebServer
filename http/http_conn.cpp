@@ -213,12 +213,14 @@ bool http_conn::read_once(){
 
 //解析http请求行，获得请求方法，目标url以及http版本号
 http_conn::HTTP_CODE http_conn::parse_request_line(char* text){
+    //找到匹配位置,此时m_url指向空格
     m_url = strpbrk(text, " \t");
     if(!m_url){
         return BAD_REQUEST;
     }
     *m_url++ = '\0';
     char* method = text;
+    //比较
     if(strcasecmp(method, "GET") == 0){
         m_method = GET;
     }
@@ -229,5 +231,91 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char* text){
     else{
         return BAD_REQUEST;
     }
-    
+    //第一个不在后者的下标，可能中间会有很多空格，找到第一个字母
+    m_url += strspn(m_url, " \t");
+    m_version = strpbrk(m_url, " \t");
+    if(!m_version)
+        return BAD_REQUEST;
+    *m_version++ = '\0';
+    //找到协议
+    m_version += strspn(m_version, " \t");
+    if(strcasecmp(m_version, "HTTP/1.1") != 0){
+        return BAD_REQUEST;
+    }
+    if(strncasecmp(m_url, "http://", 7) == 0){
+        m_url += 7;
+        //最后一次出现的位置
+        m_url = strchr(m_url, '/');
+    }
+    else if(strncasecmp(m_url, "https://", 8) == 0){
+        m_url += 8;
+        m_url = strchr(m_url, '/');
+    }
+
+    if(!m_url || m_url[0] != '/')
+        return BAD_REQUEST;
+    //当url为/ 时，显示为判断界面
+    if(strlen(m_url) == 1)
+        strcat(m_url, "judge.html");
+    m_check_state = CHECK_STATE_HEADER;
+    return NO_REQUEST;
+}
+
+//解析http请求的一个头部信息
+http_conn::HTTP_CODE http_conn::parse_headers(char* text){
+    /* 遇到一个空行，说明得到了一个正确的HTTP请求 */
+    if(text[0] == '\0'){
+        if(m_content_length != 0){
+            m_check_state = CHECK_STATE_CONTENT;
+            return NO_REQUEST;
+        }
+        return GET_REQUEST;
+    }
+    else if (strncasecmp(text, "Connection:", 11) == 0)
+    {
+        text += 11;
+        text += strspn(text, " \t");
+        if (strcasecmp(text, "keep-alive") == 0)
+        {
+            m_linger = true;
+        }
+    }
+    else if (strncasecmp(text, "Content-length:", 15) == 0)
+    {
+        text += 15;
+        text += strspn(text, " \t");
+        m_content_length = atol(text);
+    }
+    else if (strncasecmp(text, "Host:", 5) == 0)
+    {
+        text += 5;
+        text += strspn(text, " \t");
+        m_host = text;
+    }
+    else
+    {
+        LOG_INFO("oop!unknow header: %s", text);
+    }
+    return NO_REQUEST;
+}
+
+//判断http请求是否被完整读入
+http_conn::HTTP_CODE http_conn::parse_content(char* text){
+    if(m_read_idx >= (m_content_length + m_checked_idx)){
+        text[m_content_length] = '\0';
+        //POST请求中最后为输入的用户名和密码
+        m_string = text;
+        return GET_REQUEST;
+    }
+    return NO_REQUEST;
+}
+
+http_conn::HTTP_CODE http_conn::process_read(){
+    LINE_STATUS line_status = LINE_OK;
+    HTTP_CODE ret = NO_REQUEST;
+    char* text = 0;
+
+    while((m_check_state == CHECK_STATE_CONTENT && line_status == LINE_OK) || ((line_status = parse_line()) == LINE_OK)){
+        
+    }
 }
