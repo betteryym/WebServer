@@ -624,7 +624,7 @@ bool http_conn::process_write(HTTP_CODE ret){
                 return true;
             }
             else{
-                const char* ok_string = "<html><body></body></html>":
+                const char* ok_string = "<html><body></body></html>";
                 add_headers(strlen(ok_string));
                 if(!add_content(ok_string))
                     return false;
