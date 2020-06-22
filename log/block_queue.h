@@ -75,7 +75,7 @@ public:
         return true;
     }
     //返回队尾元素
-    bool back(T& value{
+    bool back(T& value){
         m_mutex.lock();
         if(m_size == 0){
             m_mutex.unlock();

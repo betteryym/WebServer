@@ -10,7 +10,7 @@
 
 using namespace std;
 
-conncection_pool::connection_pool(){
+connection_pool::connection_pool(){
     m_CurConn = 0;
     m_FreeConn = 0;
 }
@@ -26,7 +26,7 @@ void connection_pool::init(string url, string User, string Password, string DBNa
     m_Port = Port;
     m_User = User;
     m_Password = Password;
-    m_DatabaseNmae = DBName;
+    m_DatabaseName = DBName;
     m_close_log = close_log;
 
     for(int i = 0; i < MaxConn; i++){
@@ -37,7 +37,7 @@ void connection_pool::init(string url, string User, string Password, string DBNa
             LOG_ERROR("MySQL Error");
             exit(1);
         }
-        con = mysql_real_connectioin(con, url.c_str(), User.c_str(), Password.c_str(), DBName.c_str(), Port, NULL, 0);
+        con = mysql_real_connect(con, url.c_str(), User.c_str(), Password.c_str(), DBName.c_str(), Port, NULL, 0);
         
         if(con == NULL){
             LOG_ERROR("MySQL Error");
@@ -49,7 +49,7 @@ void connection_pool::init(string url, string User, string Password, string DBNa
 
     reserve = sem(m_FreeConn);
 
-    m_Maxconn = m_FreeConn;
+    m_MaxConn = m_FreeConn;
 }
 
 //当有请求的时候，从数据库连接池中返回一个可用连接，更新使用和空闲连接数
