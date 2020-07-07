@@ -16,11 +16,13 @@ using namespace std;
 template <class T>
 class block_queue{
 public:
+    //初始化私有成员
     block_queue(int max_size = 1000){
         if(max_size <= 0){
             exit(-1);
         }
 
+        //构造函数创建循环数组
         m_max_size = max_size;
         m_array = new T[max_size];
         m_size = 0;
@@ -108,12 +110,14 @@ public:
     //若当前没有线程等待条件变量，则唤醒无意义
     bool push(const T& item){
         m_mutex.lock();
+        //队列满了，push失败
         if(m_size >= m_max_size){
             m_cond.broadcast();
             m_mutex.unlock();
             return false;
         }
 
+        //把新增的数据放在循环数组的对应位置
         m_back = (m_back + 1) % m_max_size;
         m_array[m_back] = item;
 
@@ -127,7 +131,7 @@ public:
     bool pop(T& item){
         m_mutex.lock();
         while(m_size <= 0){
-            //wait成功，返回0
+            //wait失败，也就是当前没有元素
             if(!m_cond.wait(m_mutex.get())){
                 m_mutex.unlock();
                 return false;
