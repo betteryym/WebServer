@@ -102,10 +102,16 @@ private:
 
     /* 下面这组函数被process_read 调用以分析HTTP请求 */
     HTTP_CODE parse_request_line(char* text);
+    /* 主状态机解析报文中的请求头数据 */
     HTTP_CODE parse_headers(char* text);
+    /* 主状态机解析报文中的请求内容 */
     HTTP_CODE parse_content(char* text);
+    /* 生成响应报文 */
     HTTP_CODE do_request();
+    /* m_start_line是已经解析的字符
+    get_line用于将指针向后偏移，指向未处理的字符 */
     char* get_line() {return m_read_buf + m_start_line;};
+    /* 从状态机读取一行，分析是请求报文的哪一部分 */
     LINE_STATUS parse_line();
 
     /* 下面这组函数被process_write调用以填充HTTP应答 */
@@ -176,7 +182,7 @@ private:
     
     int cgi;        //是否启用的POST
     char* m_string; //存储请求头数据
-    int bytes_to_send;
+    int bytes_to_send; 
     int bytes_have_send;
     char* doc_root;
 

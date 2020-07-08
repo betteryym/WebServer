@@ -44,6 +44,7 @@ void http_conn::initmysql_result(connection_pool* connPool){
     }
 }
 
+//对文件描述符设置非阻塞
 int setnonblocking(int fd){
     int old_option = fcntl(fd, F_GETFL);
     int new_option = old_option | O_NONBLOCK;
@@ -121,7 +122,7 @@ void http_conn::init(int sockfd, const sockaddr_in& addr, char* root, int TRIGMo
 }
 
 //初始化新接受的连接
-//check_state 默认为分析请求航状态
+//check_state 默认为分析请求行状态
 void http_conn::init(){
     mysql = NULL;
     bytes_to_send = 0;
