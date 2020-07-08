@@ -45,7 +45,7 @@ private:
     char dir_name[128]; //路径名
     char log_name[128]; //log文件名
     int m_split_lines;      //日志最大行数
-    int m_log_buf_size; //日志缓冲区代销
+    int m_log_buf_size; //日志缓冲区大小
     long long m_count;  //日志行数记录
     int m_today;                //按天记录分类，记录当前时间是哪一天
     FILE* m_fp;                  //打开的Log文件指针
@@ -53,7 +53,7 @@ private:
     block_queue<string>* m_log_queue;   //阻塞队列
     bool m_is_async;       //是否同步标志位
     locker m_mutex;
-    int m_close_log;                                            //关闭日志
+    int m_close_log;        //关闭日志
 };
 
 #define LOG_DEBUG(format, ...) if(m_close_log == 0) {Log::get_instance()->write_log(0, format, ##__VA_ARGS__); Log::get_instance()->flush();}

@@ -59,7 +59,7 @@ public:
     string m_user;
     string m_password;
     string m_databaseName;
-    int m_sql_num;
+    int m_sql_num;       //数据库连接池数量
 
     //线程池相关
     threadpool<http_conn>* m_pool;

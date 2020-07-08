@@ -34,7 +34,7 @@ private:
     int m_FreeConn;         //当前空闲的连接数
     locker lock;
     list<MYSQL *> connList; //连接池
-    sem reserve;
+    sem reserve;                  //信号量对象，代表当前的空闲连接数
 
 public:
     string m_url;           //主机地址
