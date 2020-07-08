@@ -52,7 +52,7 @@ int setnonblocking(int fd){
     return old_option;
 }
 
-//将内核时间表注册读时间,ET模式，选择开启EPOLLONESHOT
+//将内核事件表注册读时间,ET模式，选择开启EPOLLONESHOT
 void addfd(int epollfd, int fd, bool one_shot, int TRIGMode){
     epoll_event event;
     event.data.fd = fd;
@@ -408,15 +408,18 @@ http_conn::HTTP_CODE http_conn::do_request(){
                     strcpy(m_url, "/registerError.html");
                 }
             }
-            //如果是登陆，直接判断
-            //若浏览器输入的用户名和密码在表中可以查找到，返回1，否则返回0
-            else if(*(p+1) == '2'){
-                if(users.find(name) != users.end() && users[name] == password){
-                    strcpy(m_url, "/welcome.html");
-                }
-                else{
-                    strcpy(m_url, "/logError.html");
-                }
+            else{
+                strcpy(m_url, "/registerError.html");
+            }
+        }
+        //如果是登陆，直接判断
+        //若浏览器输入的用户名和密码在表中可以查找到，返回1，否则返回0
+        else if(*(p+1) == '2'){
+            if(users.find(name) != users.end() && users[name] == password){
+                strcpy(m_url, "/welcome.html");
+            }
+            else{
+                strcpy(m_url, "/logError.html");
             }
         }
     }
@@ -535,6 +538,7 @@ bool http_conn::write(){
         }
     }
 }
+
 
 bool http_conn::add_response(const char* format, ...){
     if(m_write_idx >= WRITE_BUFFER_SIZE){

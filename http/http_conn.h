@@ -54,14 +54,14 @@ public:
     };
     /* 服务器处理HTTP请求的可能结果 */
     enum HTTP_CODE{
-        NO_REQUEST,
-        GET_REQUEST,
-        BAD_REQUEST,
+        NO_REQUEST,                         //请求不完整，需要继续读取客户数据
+        GET_REQUEST,                       //获得一个完整的客户请求
+        BAD_REQUEST,                        //表示客户请求有语法错误
         NO_RESOURCE,
         FORBIDDEN_REQUEST,
         FILE_REQUSET,
-        INTERNAL_ERROR,
-        CLOSED_CONNECTION
+        INTERNAL_ERROR,                //服务器内部错误
+        CLOSED_CONNECTION        //客户已经关闭连接
     };
     /* 行的读取状态 */
     enum LINE_STATUS{

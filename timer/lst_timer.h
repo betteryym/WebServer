@@ -60,9 +60,13 @@ public:
     即该定时器需要往链表的尾部移动*/
     void adjust_timer(util_timer* timer);
     void del_timer(util_timer* timer);
+    /* SIGALRM 信号每次被触发就在其信号处理函数（如果使用统一事件源，则是主函数）
+    中执行一次tick函数，以处理链表上到期的任务 */
     void tick();
 
 private:
+    /* 重载的辅助函数，被公有的add_timer函数和adjust_timer函数调用，
+    表示将目标定时器timer添加到lst_head之后的部分链表中 */
     void add_timer(util_timer* timer, util_timer* lst_head);
 
     util_timer* head;
