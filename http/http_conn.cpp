@@ -527,9 +527,12 @@ bool http_conn::write(){
 
         if(bytes_to_send <= 0){
             unmap();
+            //在epoll树上重置EPOLLONESHOT事件
             modfd(m_epollfd, m_sockfd, EPOLLIN, m_TRIGMode);
 
+            //浏览器的请求为长请求
             if(m_linger){
+                //重新初始化HTTP对象
                 init();
                 return true;
             }else{

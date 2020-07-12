@@ -131,7 +131,7 @@ public:
     bool pop(T& item){
         m_mutex.lock();
         while(m_size <= 0){
-            //wait失败，也就是当前没有元素
+            //wait成功时返回0
             if(!m_cond.wait(m_mutex.get())){
                 m_mutex.unlock();
                 return false;
