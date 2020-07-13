@@ -54,7 +54,7 @@ private:
     FILE* m_fp;                  //打开的Log文件指针
     char* m_buf;
     block_queue<string>* m_log_queue;   //阻塞队列
-    bool m_is_async;       //是否同步标志位
+    bool m_is_async;       //是否异步标志位
     locker m_mutex;
     int m_close_log;        //关闭日志
 };

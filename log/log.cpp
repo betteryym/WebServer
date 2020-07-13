@@ -88,7 +88,7 @@ void Log::write_log(int level, const char* format, ...){
     m_mutex.lock();
     m_count++;
 
-    //如果之前的日期不等于现在的日期或者目前日志行数超过最大值了
+    //如果之前的日期不等于现在的日期或者目前日志行数没有达到最大值
     if(m_today != my_tm.tm_mday || m_count % m_split_lines == 0) //everyday log
     {
         char new_log[256] = {0};
@@ -138,7 +138,6 @@ void Log::write_log(int level, const char* format, ...){
 
     va_end(valst);
 }
-
 
 void Log::flush(void){
     m_mutex.lock();
